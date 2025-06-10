@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问答小程序</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.20.6/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .hover-scale {
+            transition: transform 0.3s ease;
+        }
+
+        .hover-scale:hover {
+            transform: scale(1.05);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #6b7280, #3b82f6);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root" className="min-h-screen bg-gray-50"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+    // 模拟问题数据
+    const questions = [
+      {
+        id: 1,
+        type: 'fill',
+        question: '供应商名称是？',
+        points: 10,
+      },
+      {
+        id: 2,
+        type: 'choice',
+        question: '是否为希音的正式供应商？',
+        options: ['是', '否'],
+        correct: 'React',
+        points: 5,
+      },
+      {
+        id: 3,
+        type: 'choice',
+        question: 'CSS 是一种什么语言？',
+        options: ['标记语言', '样式语言', '编程语言', '脚本语言'],
+        correct: '样式语言',
+        points: 5,
+      },
+    ];
+
+    // 主组件
+    function App() {
+      const [isLoggedIn, setIsLoggedIn] = useState(false);
+      const [currentQuestion, setCurrentQuestion] = useState(0);
+      const [answers, setAnswers] = useState({});
+      const [score, setScore] = useState(null);
+
+      // 模拟扫码登录
+      const handleLogin = () => {
+        setIsLoggedIn(true);
+      };
+
+      // 处理填空题答案
+      const handleFillAnswer = (e) => {
+        setAnswers({ ...answers, [currentQuestion]: e.target.value });
+      };
+
+      // 处理选择题答案
+      const handleChoiceAnswer = (option) => {
+        setAnswers({ ...answers, [currentQuestion]: option });
+      };
+
+      // 下一题或提交
+      const handleNext = () => {
+        if (currentQuestion < questions.length - 1) {
+          setCurrentQuestion(currentQuestion + 1);
+        } else {
+          calculateScore();
+        }
+      };
+
+      // 计算得分
+      const calculateScore = () => {
+        let total = 0;
+        questions.forEach((q, index) => {
+          if (q.type === 'fill' && answers[index]?.trim()) {
+            total += q.points; // 填空题有回答即得分
+          } else if (q.type === 'choice' && answers[index] === q.correct) {
+            total += q.points; // 选择题答对得分
+          }
+        });
+        setScore(total);
+      };
+
+      // 重置
+      const handleRestart = () => {
+        setCurrentQuestion(0);
+        setAnswers({});
+        setScore(null);
+      };
+
+      // 登录页面
+      if (!isLoggedIn) {
+        return (
+          <div className="flex flex-col items-center justify-center h-screen gradient-bg">
+            <h1 className="text-4xl font-extrabold text-white mb-10 animate-fadeIn">问答小程序</h1>
+            <button
+              onClick={handleLogin}
+              className="bg-white text-blue-600 font-semibold py-4 px-8 rounded-full shadow-2xl hover-scale hover:bg-blue-50 transition duration-300"
+            >
+              扫码登录
+            </button>
+          </div>
+        );
+      }
+
+      // 得分页面
+      if (score !== null) {
+        return (
+          <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+            <h1 className="text-3xl font-extrabold text-gray-800 mb-6 animate-fadeIn">您的得分</h1>
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-6xl font-bold py-6 px-12 rounded-2xl shadow-2xl animate-fadeIn">
+              {score}
+            </div>
+            <button
+              onClick={handleRestart}
+              className="mt-10 bg-blue-600 text-white font-semibold py-3 px-8 rounded-full shadow-lg hover-scale hover:bg-blue-700 transition duration-300"
+            >
+              重新开始
+            </button>
+          </div>
+        );
+      }
+
+      // 问题页面
+      const question = questions[currentQuestion];
+      return (
+        <div className="flex flex-col items-center p-6 h-screen bg-gray-50">
+          <h1 className="text-2xl font-extrabold text-gray-800 mb-6 animate-fadeIn">
+            问题 {currentQuestion + 1} / {questions.length}
+          </h1>
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 animate-fadeIn">
+            <p className="text-xl font-semibold text-gray-700 mb-6">{question.question}</p>
+            {question.type === 'fill' ? (
+              <textarea
+                className="w-full p-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-gray-700 transition duration-200"
+                rows="5"
+                placeholder="请输入您的答案..."
+                onChange={handleFillAnswer}
+              />
+            ) : (
+              <div className="space-y-3">
+                {question.options.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleChoiceAnswer(option)}
+                    className={`w-full p-4 text-left border rounded-lg shadow-sm ${
+                      answers[currentQuestion] === option
+                        ? 'bg-blue-100 border-blue-400 text-blue-700'
+                        : 'bg-white border-gray-200 text-gray-700'
+                    } hover-scale hover:bg-blue-50 transition duration-200 font-medium`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={handleNext}
+              disabled={!answers[currentQuestion]}
+              className="mt-8 w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed hover-scale hover:bg-blue-700 transition duration-300"
+            >
+              {currentQuestion < questions.length - 1 ? '下一题' : '提交'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+
+</html>
